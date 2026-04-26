@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Review Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --glass-bg: rgba(255,255,255,0.52);
+      --glass-border: rgba(255,255,255,0.78);
+      --glass-shadow: 0 8px 40px rgba(80,80,160,0.10), inset 0 1.5px 0 rgba(255,255,255,0.92);
+      --glass-hover: 0 14px 50px rgba(80,80,160,0.16), inset 0 1.5px 0 rgba(255,255,255,0.95);
+      --accent1: #5b6ef5;
+      --text-primary: #1a1a2e;
+      --text-secondary: #6b7280;
+      --text-muted: #a0aec0;
+      --pill-selected-bg: rgba(91,110,245,0.13);
+      --pill-selected-border: rgba(91,110,245,0.65);
+      --pill-selected-color: #3730b5;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 10% 0%, rgba(200,210,255,0.55) 0%, transparent 55%),
+        radial-gradient(ellipse at 90% 10%, rgba(240,200,255,0.45) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 90%, rgba(200,240,230,0.45) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 80%, rgba(255,210,230,0.4) 0%, transparent 50%),
+        linear-gradient(160deg, #eef2ff 0%, #f5f0ff 35%, #fff0f8 70%, #f0fdf8 100%);
+      padding: 2rem 1rem 4rem;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: -80px; left: -80px;
+      width: 350px; height: 350px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(167,139,250,0.18), transparent 70%);
+      animation: floatBlob 12s ease-in-out infinite alternate;
+      pointer-events: none; z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -60px; right: -60px;
+      width: 300px; height: 300px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(244,114,182,0.15), transparent 70%);
+      animation: floatBlob 15s ease-in-out infinite alternate-reverse;
+      pointer-events: none; z-index: 0;
+    }
+    @keyframes floatBlob {
+      from { transform: translate(0,0) scale(1); }
+      to { transform: translate(30px, 40px) scale(1.12); }
+    }
+
+    .app {
+      max-width: 600px;
+      margin: 0 auto;
+      position: relative; z-index: 1;
+    }
+
+    .header { text-align: center; margin-bottom: 2.25rem; }
+
+    .header-icon {
+      width: 64px; height: 64px;
+      background: rgba(255,255,255,0.65);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 18px;
+      border: 1.5px solid rgba(255,255,255,0.85);
+      box-shadow: 0 4px 24px rgba(91,110,245,0.15), inset 0 1px 0 rgba(255,255,255,0.95);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 30px;
+      margin: 0 auto 1.1rem;
+      animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.7); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px; font-weight: 600;
+      background: linear-gradient(135deg, #3730b5 0%, #7c3aed 50%, #be185d 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 6px; line-height: 1.2;
+    }
+
+    .header p {
+      font-size: 14px; color: var(--text-secondary); font-weight: 400;
+    }
+
+    .progress-wrap {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 1.5rem;
+    }
+    .progress-bar {
+      flex: 1; height: 4px;
+      background: rgba(180,180,220,0.2);
+      border-radius: 999px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; border-radius: 999px;
+      background: linear-gradient(90deg, #5b6ef5, #a78bfa, #ec4899);
+      transition: width 0.55s cubic-bezier(0.4,0,0.2,1);
+      width: 0%;
+    }
+    .progress-label {
+      font-size: 12px; font-weight: 600; color: var(--text-muted);
+      min-width: 36px; text-align: right;
+    }
+
+    .glass-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border-radius: 22px;
+      border: 1.5px solid var(--glass-border);
+      box-shadow: var(--glass-shadow);
+      padding: 1.4rem 1.5rem;
+      margin-bottom: 12px;
+      transition: box-shadow 0.3s ease, transform 0.3s ease;
+      animation: slideUp 0.4s ease both;
+    }
+
+    .glass-card:hover {
+      box-shadow: var(--glass-hover);
+      transform: translateY(-1px);
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .step-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+      color: var(--text-muted); text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .question {
+      font-size: 15px; font-weight: 600; color: var(--text-primary);
+      margin-bottom: 1rem; line-height: 1.45;
+    }
+
+    .options-grid {
+      display: flex; flex-wrap: wrap; gap: 8px;
+    }
+
+    .option-pill input { display: none; }
+
+    .pill-label {
+      display: inline-block;
+      padding: 8px 15px;
+      border-radius: 999px;
+      border: 1.5px solid rgba(180,180,220,0.35);
+      background: rgba(255,255,255,0.48);
+      font-size: 13px; font-weight: 500; color: #374151;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+      white-space: nowrap;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      line-height: 1.3;
+    }
+
+    .pill-label:active { transform: scale(0.96); }
+
+    .pill-label:hover {
+      border-color: rgba(91,110,245,0.45);
+      background: rgba(238,240,255,0.65);
+      color: #3730b5;
+    }
+
+    input[type=checkbox]:checked + .pill-label,
+    input[type=radio]:checked + .pill-label {
+      background: var(--pill-selected-bg);
+      border-color: var(--pill-selected-border);
+      color: var(--pill-selected-color);
+      box-shadow: 0 2px 14px rgba(91,110,245,0.18), inset 0 1px 0 rgba(255,255,255,0.6);
+      font-weight: 600;
+    }
+
+    .multi-note {
+      font-size: 11px; color: var(--text-muted);
+      margin-top: 8px; font-style: italic;
+    }
+
+    .generate-btn {
+      width: 100%; padding: 15px;
+      border-radius: 16px; border: none;
+      background: linear-gradient(135deg, #5b6ef5 0%, #8b5cf6 50%, #ec4899 100%);
+      color: white;
+      font-family: 'Nunito', sans-serif;
+      font-size: 16px; font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 22px rgba(91,110,245,0.38);
+      letter-spacing: 0.01em;
+      margin-top: 6px;
+      position: relative; overflow: hidden;
+    }
+
+    .generate-btn::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
+      border-radius: inherit;
+    }
+
+    .generate-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(91,110,245,0.48);
+    }
+
+    .generate-btn:active:not(:disabled) { transform: translateY(0); }
+
+    .generate-btn:disabled {
+      opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none;
+    }
+
+    .result-card {
+      background: rgba(255,255,255,0.68);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border-radius: 22px;
+      border: 1.5px solid rgba(255,255,255,0.9);
+      box-shadow: 0 10px 50px rgba(80,80,160,0.13), inset 0 1.5px 0 rgba(255,255,255,0.98);
+      padding: 1.75rem;
+      margin-top: 14px;
+      display: none;
+    }
+
+    .result-card.visible {
+      display: block;
+      animation: fadeUp 0.5s cubic-bezier(0.34,1.2,0.64,1);
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .result-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 1rem;
+      padding-bottom: 0.9rem;
+      border-bottom: 1px solid rgba(180,180,220,0.25);
+    }
+
+    .result-title {
+      font-size: 11px; font-weight: 700; color: var(--accent1);
+      text-transform: uppercase; letter-spacing: 0.1em;
+    }
+
+    .stars { color: #f59e0b; font-size: 18px; letter-spacing: 2px; }
+
+    .review-text {
+      font-size: 15.5px; line-height: 1.82; color: #1f2937; font-weight: 400;
+    }
+
+    .error-text {
+      font-size: 14px; line-height: 1.6; color: #b91c1c;
+      background: rgba(254,202,202,0.3);
+      border: 1px solid rgba(252,165,165,0.4);
+      border-radius: 10px; padding: 12px 14px;
+    }
+
+    .result-actions { margin-top: 1.25rem; display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .copy-btn, .reset-btn, .retry-btn {
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 13px; font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .copy-btn {
+      border: 1.5px solid rgba(91,110,245,0.35);
+      background: rgba(91,110,245,0.08); color: #3730b5;
+    }
+    .copy-btn:hover { background: rgba(91,110,245,0.15); border-color: rgba(91,110,245,0.55); }
+
+    .reset-btn {
+      border: 1.5px solid rgba(180,180,200,0.3);
+      background: transparent; color: var(--text-secondary);
+    }
+    .reset-btn:hover { background: rgba(0,0,0,0.04); }
+
+    .retry-btn {
+      border: 1.5px solid rgba(245,158,11,0.4);
+      background: rgba(245,158,11,0.08); color: #92400e;
+    }
+    .retry-btn:hover { background: rgba(245,158,11,0.15); }
+
+    .dots { display: inline-flex; gap: 5px; align-items: center; margin-right: 8px; }
+    .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: white; animation: blink 1.2s infinite;
+    }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink {
+      0%,80%,100% { transform: scale(0.65); opacity: 0.35; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -400px 0; }
+      100% { background-position: 400px 0; }
+    }
+    .shimmer-line {
+      height: 14px; border-radius: 6px; margin-bottom: 10px;
+      background: linear-gradient(90deg, rgba(200,200,230,0.3) 25%, rgba(230,230,255,0.6) 50%, rgba(200,200,230,0.3) 75%);
+      background-size: 800px 100%;
+      animation: shimmer 1.4s infinite;
+    }
+    .shimmer-line:last-child { width: 60%; }
+
+    @media (max-width: 480px) {
+      body { padding: 1.25rem 0.75rem 3rem; }
+      .header h1 { font-size: 24px; }
+      .glass-card { padding: 1.2rem 1.15rem; border-radius: 18px; }
+      .pill-label { font-size: 12px; padding: 7px 13px; }
+      .generate-btn { font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <header class="header">
+    <div class="header-icon">📍</div>
+    <h1>Review Generator</h1>
+    <p>Answer 7 quick questions · get a natural Google Maps review</p>
+  </header>
+
+  <div class="progress-wrap">
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+    <div class="progress-label" id="progress-label">0 / 7</div>
+  </div>
+
+  <div id="questions-container"></div>
+
+  <button class="generate-btn" id="gen-btn" disabled>
+    ✦ Generate My Review
+  </button>
+
+  <div class="result-card" id="result-card">
+    <div class="result-header">
+      <span class="result-title">Your Google Maps Review</span>
+      <span class="stars" id="stars-display">★★★★★</span>
+    </div>
+    <div id="review-output"></div>
+    <div class="result-actions" id="result-actions"></div>
+  </div>
+</div>
+
+
+<script src="config.js" onerror="console.log('Running in production mode')"></script>
+
+<!-- Gemini JS SDK via CDN (ESM) -->
+<script type="module">
+  import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.21.0";
+
+  // const GEMINI_API_KEY = CONFIG.GEMINI_API_KEY; 
+  // 1. Define the placeholder for GitHub (This gets replaced by the Action)
+// Example: If your key was encoded
+const PROD_KEY = atob("__GEMINI_API_KEY__");
+
+  // 2. Define your local key here (It's okay here since this version isn't pushed)
+ // 2. Safe check for Local Key
+  // If config.js is missing, this won't crash the app
+  const LOCAL_KEY = typeof CONFIG !== 'undefined' ? CONFIG.GEMINI_API_KEY : null;
+
+  // 3. Logic: If the URL includes 'localhost' or '127.0.0.1', use Local, else use Prod
+  const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+  const GEMINI_API_KEY = isLocal ? LOCAL_KEY : PROD_KEY;
+  
+  // 4. Final Safety Check
+  if (!GEMINI_API_KEY || GEMINI_API_KEY === "__GEMINI_API_KEY__") {
+      console.warn("API Key not found. Ensure config.js exists locally or Secret is set on GitHub.");
+  }
+
+  const questions = [
+    {
+      id: "place_type", label: "Step 1 of 7",
+      question: "What type of place is this?",
+      type: "radio",
+      options: ["Restaurant / Cafe","Street Food / Stall","Fine Dining","Bakery / Desserts","Bar / Pub","Hotel","Salon / Spa","Shop / Store"]
+    },
+    {
+      id: "overall", label: "Step 2 of 7",
+      question: "Overall, how was your experience?",
+      type: "radio",
+      options: ["Outstanding ⭐⭐⭐⭐⭐","Very good ⭐⭐⭐⭐","Good ⭐⭐⭐","Average ⭐⭐","Disappointing ⭐"]
+    },
+    {
+      id: "food_quality", label: "Step 3 of 7",
+      question: "How was the food or service quality?",
+      type: "checkbox",
+      options: ["Delicious / Excellent","Fresh ingredients","Authentic flavours","Generous portions","Overpriced for quality","Bland or mediocre","Not applicable"]
+    },
+    {
+      id: "hygiene", label: "Step 4 of 7",
+      question: "How was the hygiene and cleanliness?",
+      type: "radio",
+      options: ["Spotless and pristine","Clean and tidy","Average, nothing special","A bit messy","Hygiene concerns noticed"]
+    },
+    {
+      id: "ambience", label: "Step 5 of 7",
+      question: "Describe the vibe or ambience",
+      type: "checkbox",
+      options: ["Cosy and warm","Lively and buzzing","Quiet and peaceful","Modern and stylish","Cramped or noisy","Outdoor seating","Family-friendly","Romantic setting"]
+    },
+    {
+      id: "service", label: "Step 6 of 7",
+      question: "How was the staff / service?",
+      type: "radio",
+      options: ["Exceptional and warm","Friendly and helpful","Decent, did the job","Slow but polite","Inattentive or rude"]
+    },
+    {
+      id: "recommend", label: "Step 7 of 7",
+      question: "Would you recommend this place?",
+      type: "radio",
+      options: ["Absolutely — will return often","Yes, worth a visit","Maybe, for specific things","Not really","Definitely not"]
+    }
+  ];
+
+  const answers = {};
+  let isGenerating = false;
+
+  function renderQuestions() {
+    const container = document.getElementById("questions-container");
+    container.innerHTML = "";
+    questions.forEach((q, idx) => {
+      const card = document.createElement("div");
+      card.className = "glass-card";
+      card.style.animationDelay = (idx * 0.07) + "s";
+      const optionsHTML = q.options.map(opt => `
+        <label class="option-pill">
+          <input type="${q.type}" name="${q.id}" value="${opt}">
+          <span class="pill-label">${opt}</span>
+        </label>
+      `).join("");
+      card.innerHTML = `
+        <div class="step-label">${q.label}</div>
+        <div class="question">${q.question}</div>
+        <div class="options-grid">${optionsHTML}</div>
+        ${q.type === "checkbox" ? '<p class="multi-note">Select one or more options</p>' : ""}
+      `;
+      // Attach listeners after inserting into DOM
+      card.querySelectorAll(`input[name="${q.id}"]`).forEach(input => {
+        input.addEventListener("change", () => onAnswer(q.id, q.type));
+      });
+      container.appendChild(card);
+    });
+  }
+
+  function onAnswer(id, type) {
+    if (type === "checkbox") {
+      const checked = document.querySelectorAll(`input[name="${id}"]:checked`);
+      answers[id] = Array.from(checked).map(i => i.value);
+    } else {
+      const checked = document.querySelector(`input[name="${id}"]:checked`);
+      answers[id] = checked ? checked.value : null;
+    }
+    updateProgress();
+    checkReady();
+  }
+
+  function updateProgress() {
+    const filled = questions.filter(q => {
+      const v = answers[q.id];
+      return Array.isArray(v) ? v.length > 0 : !!v;
+    }).length;
+    const pct = Math.round((filled / questions.length) * 100);
+    document.getElementById("progress-fill").style.width = pct + "%";
+    document.getElementById("progress-label").textContent = filled + " / " + questions.length;
+  }
+
+  function checkReady() {
+    const allFilled = questions.every(q => {
+      const v = answers[q.id];
+      return Array.isArray(v) ? v.length > 0 : !!v;
+    });
+    document.getElementById("gen-btn").disabled = !allFilled;
+  }
+
+  function getStarCount(overall) {
+    if (!overall) return 5;
+    const count = (overall.match(/⭐/g) || []).length;
+    return count || 5;
+  }
+
+  function showShimmer() {
+    document.getElementById("review-output").innerHTML = `
+      <div class="shimmer-line" style="width:95%"></div>
+      <div class="shimmer-line" style="width:88%"></div>
+      <div class="shimmer-line" style="width:92%"></div>
+      <div class="shimmer-line" style="width:70%"></div>
+    `;
+    document.getElementById("result-actions").innerHTML = "";
+  }
+
+  function showReview(text) {
+    const out = document.getElementById("review-output");
+    out.className = "review-text";
+    out.textContent = text;
+
+    document.getElementById("result-actions").innerHTML = `
+      <button class="copy-btn" id="copy-btn">Copy Review</button>
+      <button class="reset-btn" id="reset-btn">Start Over</button>
+    `;
+    document.getElementById("copy-btn").addEventListener("click", () => copyReview(text));
+    document.getElementById("reset-btn").addEventListener("click", resetForm);
+  }
+
+  function showError(msg) {
+    const out = document.getElementById("review-output");
+    out.className = "";
+    out.innerHTML = `<div class="error-text">⚠️ ${msg}</div>`;
+    document.getElementById("result-actions").innerHTML = `
+      <button class="retry-btn" id="retry-btn">Try Again</button>
+      <button class="reset-btn" id="reset-btn2">Start Over</button>
+    `;
+    document.getElementById("retry-btn").onclick = () => generateReview();
+    document.getElementById("reset-btn2").onclick = () => resetForm();
+  }
+
+  async function generateReview() {
+    if (isGenerating) return;
+    isGenerating = true;
+
+    const btn = document.getElementById("gen-btn");
+    btn.disabled = true;
+    btn.innerHTML = `<span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span> Generating…`;
+
+    const resultCard = document.getElementById("result-card");
+    const starsDisplay = document.getElementById("stars-display");
+
+    const stars = getStarCount(answers.overall);
+    starsDisplay.textContent = "★".repeat(stars) + "☆".repeat(5 - stars);
+
+    resultCard.classList.add("visible");
+    showShimmer();
+    resultCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+    const foodQuality = Array.isArray(answers.food_quality) ? answers.food_quality.join(", ") : answers.food_quality;
+    const ambience = Array.isArray(answers.ambience) ? answers.ambience.join(", ") : answers.ambience;
+
+    const prompt = `You are helping someone write a genuine Google Maps review. Based on their answers below, write a natural review that sounds like a real person wrote it — not AI-generated.
+
+Answers:
+- Place type: ${answers.place_type}
+- Overall experience: ${answers.overall}
+- Food / service quality: ${foodQuality}
+- Hygiene: ${answers.hygiene}
+- Ambience / vibe: ${ambience}
+- Staff / service: ${answers.service}
+- Would recommend: ${answers.recommend}
+
+Rules:
+- Write 2–5 sentences total. Use 3-4 sentences if the experience was very positive or very negative. Use 2–3 for mixed or average.
+- Sound like a real, casual local reviewer. Natural Human English without any complex words, slightly conversational.
+- Do NOT start with "I". Vary the opening.
+- Mention only 2–3 specific things from the answers. Do not list everything.
+- If anything was negative, mention it honestly simply.
+- No hashtags, no emojis, no star ratings in text.
+- Output only the review text. No preamble, no quotes around it.`;
+
+
+    try {
+      // Logic Change: Fetching from our own internal API route
+      const response = await fetch('/api/generate-review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: prompt })
+      });
+
+      const data = await response.json();
+
+      if (data.text) {
+        showReview(data.text);
+      } else {
+        showError("Failed to generate text. Check Vercel logs.");
+      }
+    } catch (err) {
+      console.error("API error:", err);
+      showError("Connection lost. Please try again.");
+    }
+
+    btn.innerHTML = "✦ Generate My Review";
+    btn.disabled = false;
+    isGenerating = false;
+  }
+
+  function copyReview(text) {
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById("copy-btn");
+      if (btn) { btn.textContent = "✓ Copied!"; setTimeout(() => btn.textContent = "Copy Review", 2500); }
+    }).catch(() => {
+      const ta = document.createElement("textarea");
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select(); document.execCommand("copy");
+      document.body.removeChild(ta);
+      const btn = document.getElementById("copy-btn");
+      if (btn) { btn.textContent = "✓ Copied!"; setTimeout(() => btn.textContent = "Copy Review", 2500); }
+    });
+  }
+
+  function resetForm() {
+    isGenerating = false;
+    Object.keys(answers).forEach(k => delete answers[k]);
+    document.getElementById("result-card").classList.remove("visible");
+    document.getElementById("progress-fill").style.width = "0%";
+    document.getElementById("progress-label").textContent = "0 / 7";
+    document.querySelectorAll("input[type=checkbox], input[type=radio]").forEach(i => i.checked = false);
+    document.getElementById("gen-btn").disabled = true;
+    document.getElementById("gen-btn").innerHTML = "✦ Generate My Review";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  // Wire up generate button once, cleanly
+  document.getElementById("gen-btn").addEventListener("click", () => generateReview());
+
+  renderQuestions();
+</script>
+</body>
+</html>
