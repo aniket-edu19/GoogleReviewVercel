@@ -569,8 +569,7 @@ Rules:
 - Output only the review text. No preamble, no quotes around it.`;
 
 
-    try {
-      // Logic Change: Fetching from our own internal API route
+try {
       const response = await fetch('/api/generate-review', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -582,10 +581,11 @@ Rules:
       if (data.text) {
         showReview(data.text);
       } else {
-        showError("Failed to generate text. Check Vercel logs.");
+        // This will now show you the real error from Google if it fails
+        const errorDetail = data.debug?.error?.message || "Check Vercel Logs for 'Full Google Response'";
+        showError(`Empty response: ${errorDetail}`);
       }
     } catch (err) {
-      console.error("API error:", err);
       showError("Connection lost. Please try again.");
     }
 
